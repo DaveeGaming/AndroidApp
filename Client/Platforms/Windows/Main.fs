@@ -1,0 +1,9 @@
+﻿namespace balls.WinUI
+
+open System
+
+module Program =
+    [<EntryPoint; STAThread>]
+    let main args =
+        do FSharp.Maui.WinUICompat.Program.Main(args, typeof<balls.WinUI.App>)
+        0
