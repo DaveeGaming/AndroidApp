@@ -3,9 +3,12 @@ namespace balls
 open System
 open Fabulous
 open Fabulous.Maui
+open Fabulous.Maui.SmallScalars
 open Microsoft.AspNetCore.SignalR.Client
 
 open type Fabulous.Maui.View
+open Microsoft.Maui
+open Microsoft.Maui.Controls
 
 module App =
     
@@ -53,7 +56,7 @@ module App =
             if model.Hub.IsNone then
                 let hub =
                     HubConnectionBuilder()
-                        .WithUrl("http://women-football.gl.at.ply.gg:5903/test")
+                        .WithUrl("http://localhost:5000/test")
                         .WithAutomaticReconnect()
                         .Build()
                         
@@ -77,42 +80,49 @@ module App =
                         
 
     let login (model: Model) =
-        (VStack() {
-            HStack() {
-                Label("Enter name: ").padding(10).centerVertical()
-                Entry(model.Username, UserName)
+        (View.Grid() {
+            View.HStack() {
+                View.Label("Enter name: ").padding(10).centerVertical()
+                View.Entry(model.Username, UserName)
                     .placeholder(model.Loginplaceholder)
                     .onCompleted(Enter)
-                Button("Login", Enter).margin(5,0,0,0)
+                View.Button("Login", Enter).margin(5,0,0,0)
             }
         }).center()
         
-    let app (model: Model) =
-        VStack() {
-            (VStack(){
-                Label("Chat app")
+    let app (model: Model)  =
+        (View.Grid(
+            coldefs = seq { Dimension.Star },
+            rowdefs = seq { Dimension.Auto; Dimension.Star }) {
+            (VStack() {
+                View.Label("Chat app")
                     .margin(0,30,0,0)
                     .font(size = 30.)
                     .centerHorizontal()
-                Label(model.Username)
+                    
+                View.Label(model.Username)
                     .centerHorizontal()
-                (HStack() {
-                    Entry(model.Currmessage, CurrentMessage)
-                        .placeholder("message")
-                        .minimumWidth(300.)
-                        .margin(0,0,10,0)
-                        .onCompleted(Message)
-                    Button("Send", Message)
-                }).margin(0,10,0,0)
-                VStack() {
-                    for msg in model.Messages do
-                        Label(msg).margin(0,2,0,5)
+                   
+                HStack() { 
+                View.Entry(model.Currmessage, CurrentMessage)
+                    .placeholder("message")
+                    .minimumWidth(300.)
+                    .margin(0,0,10,0)
+                    .onCompleted(Message)
+                
+                View.Button("Send", Message)
+                    .margin(0,10,0,0)
                 }
-            }).centerHorizontal()
-        }
+            }).gridRow(0)
+       
+            (View.CollectionView(model.Messages)(fun msg -> View.Label(msg)))
+               .verticalScrollBarVisibility(ScrollBarVisibility.Always)
+               .gridRow(1)
+        }).centerHorizontal()
+        
     let view (model: Model) =
-        Application(
-            ContentPage(content = (if model.App then app else login) model )
+        View.Application(
+            View.ContentPage(content = (if model.App then app else login) model )
         )
     
         
