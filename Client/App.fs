@@ -9,6 +9,7 @@ open Microsoft.AspNetCore.SignalR.Client
 open type Fabulous.Maui.View
 open Microsoft.Maui
 open Microsoft.Maui.Controls
+open Microsoft.Maui.Devices
 
 module App =
     
@@ -17,7 +18,7 @@ module App =
         Currmessage: string
         Username: string
         App: bool
-        Messages: string list
+        Messages: (string * string) list
         Loginplaceholder: string
     }
 
@@ -76,7 +77,7 @@ module App =
                 model.Hub.Value.InvokeAsync("sendMessage", model.Username, model.Currmessage.Trim()) |> Async.AwaitTask |> ignore
                 { model with Currmessage = "" }, Cmd.none
         | CurrentMessage s -> {model with Currmessage = s }, Cmd.none
-        | ReceiveMessage(user,msg) -> {model with Messages = $"{user}: {msg}" :: model.Messages }, Cmd.none
+        | ReceiveMessage(user,msg) -> {model with Messages = (user, msg) :: model.Messages }, Cmd.none
                         
 
     let login (model: Model) =
@@ -92,8 +93,8 @@ module App =
         
     let app (model: Model)  =
         (View.Grid(
-            coldefs = seq { Dimension.Star },
-            rowdefs = seq { Dimension.Auto; Dimension.Star }) {
+            coldefs = [ Star ],
+            rowdefs = [ Auto; Star ]) {
             (VStack() {
                 View.Label("Chat app")
                     .margin(0,30,0,0)
@@ -102,6 +103,7 @@ module App =
                     
                 View.Label(model.Username)
                     .centerHorizontal()
+                    .margin(0,0,0,15)
                    
                 HStack() { 
                 View.Entry(model.Currmessage, CurrentMessage)
@@ -111,20 +113,23 @@ module App =
                     .onCompleted(Message)
                 
                 View.Button("Send", Message)
-                    .margin(0,10,0,0)
                 }
             }).gridRow(0)
        
-            (View.CollectionView(model.Messages)(fun msg -> View.Label(msg)))
+            (View.CollectionView(model.Messages)
+                 (fun (user, msg) ->
+                        if String.Equals("server", user) then
+                            View.Label(msg)
+                                .textColor(Graphics.Color.FromRgb(112, 128, 144))
+                                .centerTextVertical()
+                        else
+                            View.Label($"{user} > {msg}")))
                .verticalScrollBarVisibility(ScrollBarVisibility.Always)
                .gridRow(1)
         }).centerHorizontal()
-        
     let view (model: Model) =
         View.Application(
             View.ContentPage(content = (if model.App then app else login) model )
-        )
-    
-        
-
+        ).onUnmounted(Message)
     let program = Program.statefulWithCmd init update view
+    

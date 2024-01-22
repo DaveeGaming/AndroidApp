@@ -1,6 +1,7 @@
 module server.App
 
 open System
+open System.Linq
 open System.Collections.Generic
 open System.IO
 open Microsoft.AspNetCore.Builder
@@ -12,6 +13,17 @@ open Giraffe
 
 type TestHub(users: Dictionary<string, string>) =
     inherit Hub()
+   
+    
+    
+    override this.OnDisconnectedAsync(err) =
+        
+        for user in users do
+            if String.Equals(user.Value, this.Context.ConnectionId) then
+                printfn $"{user.Key} disconnected"
+                this.Clients.All.SendAsync("Message", "server", $"{user.Key} left") |> ignore
+        Threading.Tasks.Task.CompletedTask
+    
     
     member this.sendMessage(user:string,message: string) =
         printfn $"{user} sent: {message}"
@@ -20,11 +32,12 @@ type TestHub(users: Dictionary<string, string>) =
     member this.ConnectUser(user: string) =
         if users.ContainsKey(user) then
             printfn $"User {user} tried to login with an existing name"
-            this.Clients.Caller.SendAsync("ConnectUser", false)
+            this.Clients.Caller.SendAsync("ConnectUser", false) |> ignore
         else
             printfn $"User {user} successfully logged in"
             users.Add(user, this.Context.ConnectionId)
-            this.Clients.Caller.SendAsync("ConnectUser", true)
+            this.Clients.Caller.SendAsync("ConnectUser", true) |> ignore
+            this.Clients.All.SendAsync("Message", "server", $"{user} joined") |> ignore
 let webApp =
     choose [
         GET >=>
