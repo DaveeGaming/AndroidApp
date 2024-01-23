@@ -2,6 +2,7 @@
 
 Client/bin
 Client/obj
+Client/balls.fsproj.user
 
 Server/bin
 Server/obj
