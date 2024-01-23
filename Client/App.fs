@@ -3,14 +3,14 @@ namespace balls
 open System
 open Fabulous
 open Fabulous.Maui
-open Fabulous.Maui.SmallScalars
 open Microsoft.AspNetCore.SignalR.Client
 
 open type Fabulous.Maui.View
+open Microsoft.Extensions.Logging
 open Microsoft.Maui
-open Microsoft.Maui.Controls
-open Microsoft.Maui.Devices
 
+
+    
 module App =
     
     type Model = {
@@ -36,7 +36,7 @@ module App =
         Currmessage = ""
         App = false
         Messages = []
-        Loginplaceholder = "Enter your name" 
+        Loginplaceholder = "Enter your name"
     }
     let init () =
         initmodel, Cmd.none
@@ -57,15 +57,15 @@ module App =
             if model.Hub.IsNone then
                 let hub =
                     HubConnectionBuilder()
-                        .WithUrl("http://localhost:5000/test")
+                        .WithUrl("http://women-football.gl.at.ply.gg:5903/test")
                         .WithAutomaticReconnect()
                         .Build()
                         
-                hub.StartAsync() |> ignore
+                hub.StartAsync() |> Async.AwaitTask |> ignore
                 
                 let cmd = Cmd.ofSub (fun (dispatch: Msg -> unit) -> listener dispatch hub)
                 hub.SendAsync("ConnectUser", model.Username) |> Async.AwaitTask |> ignore
-                { model with Hub = Some hub}, cmd
+                { model with Hub = Some hub }, cmd
              else
                 model.Hub.Value.SendAsync("ConnectUser", model.Username) |> Async.AwaitTask |> ignore
                 model, Cmd.none
@@ -105,7 +105,7 @@ module App =
                     .centerHorizontal()
                     .margin(0,0,0,15)
                    
-                HStack() { 
+                (HStack() { 
                 View.Entry(model.Currmessage, CurrentMessage)
                     .placeholder("message")
                     .minimumWidth(300.)
@@ -113,7 +113,7 @@ module App =
                     .onCompleted(Message)
                 
                 View.Button("Send", Message)
-                }
+                }).centerHorizontal()
             }).gridRow(0)
        
             (View.CollectionView(model.Messages)
@@ -132,4 +132,5 @@ module App =
             View.ContentPage(content = (if model.App then app else login) model )
         ).onUnmounted(Message)
     let program = Program.statefulWithCmd init update view
+                |> Program.withLogger({MinLogLevel = Fabulous.LogLevel.Error; Log = fun (level, msg) -> printfn $"{level} {msg}" })
     
